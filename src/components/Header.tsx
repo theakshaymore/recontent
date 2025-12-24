@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +27,18 @@ const Header = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut();
+    setIsLoggingOut(false);
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    navigate('/');
     setIsMobileMenuOpen(false);
   };
 
@@ -52,18 +69,45 @@ const Header = () => {
           >
             Pricing
           </button>
-          <Link
-            to="/login"
-            className="text-foreground/70 hover:text-foreground transition-colors font-medium"
-          >
-            Login
-          </Link>
-          <Button
-            variant="gradient"
-            onClick={() => navigate('/signup')}
-          >
-            Sign Up
-          </Button>
+          
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          ) : user ? (
+            <>
+              <span className="text-foreground/70 font-medium truncate max-w-[150px]">
+                {user.email}
+              </span>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-foreground/70 hover:text-foreground transition-colors font-medium"
+              >
+                Login
+              </Link>
+              <Button
+                variant="gradient"
+                onClick={() => navigate('/signup')}
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -95,23 +139,51 @@ const Header = () => {
             >
               Pricing
             </button>
-            <Link
-              to="/login"
-              className="text-foreground/70 hover:text-foreground transition-colors font-medium py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Login
-            </Link>
-            <Button
-              variant="gradient"
-              className="w-full"
-              onClick={() => {
-                navigate('/signup');
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              Sign Up
-            </Button>
+            
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : user ? (
+              <>
+                <span className="text-foreground/70 font-medium py-2 truncate">
+                  {user.email}
+                </span>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-foreground/70 hover:text-foreground transition-colors font-medium py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Button
+                  variant="gradient"
+                  className="w-full"
+                  onClick={() => {
+                    navigate('/signup');
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       )}
