@@ -2,17 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, LogOut, Loader2, Sun, Moon } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthQuery } from '@/hooks/useAuthQuery';
 import { useTheme } from '@/hooks/useTheme';
+import { useUIStore } from '@/stores/uiStore';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, isLoading, signOut, isSigningOut } = useAuthQuery();
   const { theme, toggleTheme } = useTheme();
+  const { isMobileMenuOpen, setMobileMenuOpen, toggleMobileMenu } = useUIStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -29,19 +29,25 @@ const Header = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
-    setIsMobileMenuOpen(false);
+    setMobileMenuOpen(false);
   };
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
-    await signOut();
-    setIsLoggingOut(false);
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    navigate('/');
-    setIsMobileMenuOpen(false);
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/');
+      setMobileMenuOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -85,19 +91,22 @@ const Header = () => {
             )}
           </button>
           
-          {loading ? (
+          {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : user ? (
             <>
-              <span className="text-foreground/70 font-medium truncate max-w-[150px]">
-                {user.email}
-              </span>
               <Button
                 variant="outline"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
+                onClick={() => navigate('/dashboard')}
               >
-                {isLoggingOut ? (
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                disabled={isSigningOut}
+              >
+                {isSigningOut ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
@@ -128,7 +137,7 @@ const Header = () => {
         {/* Mobile Menu Button */}
         <button
           className="md:hidden p-2"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onClick={toggleMobileMenu}
         >
           {isMobileMenuOpen ? (
             <X className="h-6 w-6 text-foreground" />
@@ -173,20 +182,27 @@ const Header = () => {
               )}
             </button>
             
-            {loading ? (
+            {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : user ? (
               <>
-                <span className="text-foreground/70 font-medium py-2 truncate">
-                  {user.email}
-                </span>
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
+                  onClick={() => {
+                    navigate('/dashboard');
+                    setMobileMenuOpen(false);
+                  }}
                 >
-                  {isLoggingOut ? (
+                  Dashboard
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={handleLogout}
+                  disabled={isSigningOut}
+                >
+                  {isSigningOut ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
@@ -201,7 +217,7 @@ const Header = () => {
                 <Link
                   to="/login"
                   className="text-foreground/70 hover:text-foreground transition-colors font-medium py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Login
                 </Link>
@@ -210,7 +226,7 @@ const Header = () => {
                   className="w-full"
                   onClick={() => {
                     navigate('/signup');
-                    setIsMobileMenuOpen(false);
+                    setMobileMenuOpen(false);
                   }}
                 >
                   Sign Up
