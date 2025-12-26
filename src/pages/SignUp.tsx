@@ -7,16 +7,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthQuery } from '@/hooks/useAuthQuery';
 
 const SignUp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, signUp, signInWithGoogle, isSigningUp } = useAuthQuery();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -29,7 +27,7 @@ const SignUp = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -67,49 +65,31 @@ const SignUp = () => {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    setIsLoading(false);
-
-    if (error) {
+    try {
+      await signUp({ email: formData.email, password: formData.password });
+      toast({
+        title: "Account created!",
+        description: "Welcome to ReContentAI. You can now start repurposing content.",
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
       toast({
         title: "Sign up failed",
-        description: error.message,
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Account created!",
-      description: "Welcome to ReContentAI. You can now start repurposing content.",
-    });
-    navigate('/');
   };
 
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true);
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
       setIsGoogleLoading(false);
       toast({
         title: "Google sign up failed",
-        description: error.message,
+        description: error.message || "Failed to sign up with Google",
         variant: "destructive",
       });
     }
@@ -195,7 +175,7 @@ const SignUp = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className={errors.email ? 'border-destructive' : ''}
-                  disabled={isLoading}
+                  disabled={isSigningUp}
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
@@ -212,7 +192,7 @@ const SignUp = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                    disabled={isLoading}
+                    disabled={isSigningUp}
                   />
                   <button
                     type="button"
@@ -237,7 +217,7 @@ const SignUp = () => {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className={errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
-                    disabled={isLoading}
+                    disabled={isSigningUp}
                   />
                   <button
                     type="button"
@@ -259,7 +239,7 @@ const SignUp = () => {
                   onCheckedChange={(checked) => 
                     setFormData({ ...formData, acceptTerms: checked as boolean })
                   }
-                  disabled={isLoading}
+                  disabled={isSigningUp}
                 />
                 <label
                   htmlFor="terms"
@@ -275,8 +255,8 @@ const SignUp = () => {
                 <p className="text-sm text-destructive">{errors.acceptTerms}</p>
               )}
 
-              <Button type="submit" variant="gradient" className="w-full h-12" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
+              <Button type="submit" variant="gradient" className="w-full h-12" disabled={isSigningUp}>
+                {isSigningUp ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
               </Button>
             </form>
 

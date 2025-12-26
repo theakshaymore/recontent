@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthQuery } from '@/hooks/useAuthQuery';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, signIn, signInWithGoogle, isSigningIn } = useAuthQuery();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -22,12 +21,15 @@ const Login = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Get the redirect path from location state, default to dashboard
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, from]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -51,46 +53,31 @@ const Login = () => {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    setIsLoading(false);
-
-    if (error) {
+    try {
+      await signIn({ email: formData.email, password: formData.password });
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      navigate(from, { replace: true });
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "Invalid email or password",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Welcome back!",
-      description: "You have successfully logged in.",
-    });
-    navigate('/');
   };
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
       setIsGoogleLoading(false);
       toast({
         title: "Google login failed",
-        description: error.message,
+        description: error.message || "Failed to sign in with Google",
         variant: "destructive",
       });
     }
@@ -176,7 +163,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className={errors.email ? 'border-destructive' : ''}
-                  disabled={isLoading}
+                  disabled={isSigningIn}
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email}</p>
@@ -198,7 +185,7 @@ const Login = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                    disabled={isLoading}
+                    disabled={isSigningIn}
                   />
                   <button
                     type="button"
@@ -213,8 +200,8 @@ const Login = () => {
                 )}
               </div>
 
-              <Button type="submit" variant="gradient" className="w-full h-12" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Log In'}
+              <Button type="submit" variant="gradient" className="w-full h-12" disabled={isSigningIn}>
+                {isSigningIn ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Log In'}
               </Button>
             </form>
 
