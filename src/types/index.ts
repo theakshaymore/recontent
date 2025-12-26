@@ -18,16 +18,82 @@ export interface Video {
   youtube_url: string;
   title: string | null;
   duration: number | null;
+  transcript: string | null;
+  transcript_status: 'pending' | 'processing' | 'completed' | 'failed' | null;
   status: 'queued' | 'processing' | 'completed' | 'failed';
   error_message: string | null;
   created_at: string;
   updated_at: string;
 }
 
-// Content Types
+// Content Types - Updated for tab-based generation
+export type ContentType = 'shorts' | 'instagram' | 'twitter' | 'linkedin';
+
+export interface ShortScript {
+  title: string;
+  duration: string;
+  hook: string;
+  script: string;
+  cta: string;
+}
+
+export interface ShortsContent {
+  shorts: ShortScript[];
+}
+
+export interface ReelScript {
+  title: string;
+  duration: string;
+  hook: string;
+  script: string;
+  caption: string;
+  hashtags: string[];
+}
+
+export interface InstagramContent {
+  reels: ReelScript[];
+}
+
+export interface TwitterContent {
+  tweets: string[];
+  total_tweets: number;
+  hashtags: string[];
+}
+
+export interface CarouselSlide {
+  slide_number: number;
+  title: string;
+  content: string;
+  design_notes: string;
+}
+
+export interface LinkedInContent {
+  slides: CarouselSlide[];
+  total_slides: number;
+}
+
+export interface ContentData {
+  shorts: ShortsContent;
+  instagram: InstagramContent;
+  twitter: TwitterContent;
+  linkedin: LinkedInContent;
+}
+
+export interface GeneratedContent<T extends ContentType = ContentType> {
+  content_id: string;
+  content_type: T;
+  data: ContentData[T];
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+}
+
+// Legacy Content Types (for backward compatibility)
 export interface Content {
   id: string;
   video_id: string;
+  content_type: ContentType | null;
+  content_data: Record<string, unknown> | null;
+  status: string | null;
   blog_post: string | null;
   tweets: TweetThread | null;
   carousel: CarouselSlide[] | null;
@@ -38,12 +104,6 @@ export interface Content {
 
 export interface TweetThread {
   tweets: string[];
-}
-
-export interface CarouselSlide {
-  title: string;
-  content: string;
-  image_url?: string;
 }
 
 export interface InstagramCaption {

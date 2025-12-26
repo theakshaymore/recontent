@@ -79,6 +79,9 @@ export function useVideoWithContent(videoId: string) {
       const typedContent = content ? {
         id: content.id,
         video_id: content.video_id,
+        content_type: content.content_type as Content['content_type'],
+        content_data: content.content_data as Content['content_data'],
+        status: content.status as Content['status'],
         blog_post: content.blog_post,
         tweets: content.tweets as unknown as Content['tweets'],
         carousel: content.carousel as unknown as Content['carousel'],
