@@ -17,7 +17,7 @@ export const videoKeys = {
 export function useVideos() {
   const { user } = useAuthQuery();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: videoKeys.list(user?.id ?? ''),
     queryFn: async (): Promise<Video[]> => {
       if (!user?.id) return [];
@@ -33,7 +33,15 @@ export function useVideos() {
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 2, // 2 minutes
+    // Auto-refresh if any video is processing
+    refetchInterval: (query) => {
+      const videos = query.state.data;
+      const hasProcessing = videos?.some(v => v.status === 'queued' || v.status === 'processing');
+      return hasProcessing ? 5000 : false; // Poll every 5 seconds if processing
+    },
   });
+
+  return query;
 }
 
 /**
@@ -90,7 +98,7 @@ export function useVideoWithContent(videoId: string) {
 }
 
 /**
- * Hook to create a new video entry
+ * Hook to create a new video entry and trigger processing
  */
 export function useCreateVideo() {
   const queryClient = useQueryClient();
@@ -100,6 +108,7 @@ export function useCreateVideo() {
     mutationFn: async (youtubeUrl: string): Promise<Video> => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // Create video entry
       const { data, error } = await supabase
         .from('videos')
         .insert({
@@ -111,6 +120,14 @@ export function useCreateVideo() {
         .single();
 
       if (error) throw error;
+
+      // Trigger processing in background (don't await)
+      supabase.functions.invoke('process-video', {
+        body: { videoId: data.id }
+      }).catch(err => {
+        console.error('Failed to trigger video processing:', err);
+      });
+
       return data as Video;
     },
     onSuccess: () => {
