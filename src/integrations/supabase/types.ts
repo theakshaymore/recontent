@@ -18,9 +18,12 @@ export type Database = {
         Row: {
           blog_post: string | null
           carousel: Json | null
+          content_data: Json | null
+          content_type: string | null
           created_at: string | null
           id: string
           instagram_captions: Json | null
+          status: string | null
           thumbnail_urls: Json | null
           tweets: Json | null
           video_id: string
@@ -28,9 +31,12 @@ export type Database = {
         Insert: {
           blog_post?: string | null
           carousel?: Json | null
+          content_data?: Json | null
+          content_type?: string | null
           created_at?: string | null
           id?: string
           instagram_captions?: Json | null
+          status?: string | null
           thumbnail_urls?: Json | null
           tweets?: Json | null
           video_id: string
@@ -38,9 +44,12 @@ export type Database = {
         Update: {
           blog_post?: string | null
           carousel?: Json | null
+          content_data?: Json | null
+          content_type?: string | null
           created_at?: string | null
           id?: string
           instagram_captions?: Json | null
+          status?: string | null
           thumbnail_urls?: Json | null
           tweets?: Json | null
           video_id?: string
@@ -135,6 +144,8 @@ export type Database = {
           id: string
           status: string | null
           title: string | null
+          transcript: string | null
+          transcript_status: string | null
           updated_at: string | null
           user_id: string
           youtube_url: string
@@ -146,6 +157,8 @@ export type Database = {
           id?: string
           status?: string | null
           title?: string | null
+          transcript?: string | null
+          transcript_status?: string | null
           updated_at?: string | null
           user_id: string
           youtube_url: string
@@ -157,6 +170,8 @@ export type Database = {
           id?: string
           status?: string | null
           title?: string | null
+          transcript?: string | null
+          transcript_status?: string | null
           updated_at?: string | null
           user_id?: string
           youtube_url?: string
