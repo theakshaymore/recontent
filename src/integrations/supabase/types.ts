@@ -14,7 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      content: {
+        Row: {
+          blog_post: string | null
+          carousel: Json | null
+          created_at: string | null
+          id: string
+          instagram_captions: Json | null
+          thumbnail_urls: Json | null
+          tweets: Json | null
+          video_id: string
+        }
+        Insert: {
+          blog_post?: string | null
+          carousel?: Json | null
+          created_at?: string | null
+          id?: string
+          instagram_captions?: Json | null
+          thumbnail_urls?: Json | null
+          tweets?: Json | null
+          video_id: string
+        }
+        Update: {
+          blog_post?: string | null
+          carousel?: Json | null
+          created_at?: string | null
+          id?: string
+          instagram_captions?: Json | null
+          thumbnail_urls?: Json | null
+          tweets?: Json | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          credits_remaining: number | null
+          email: string
+          full_name: string | null
+          id: string
+          razorpay_customer_id: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          credits_remaining?: number | null
+          email: string
+          full_name?: string | null
+          id: string
+          razorpay_customer_id?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          credits_remaining?: number | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          razorpay_customer_id?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: string | null
+          razorpay_subscription_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          created_at: string | null
+          duration: number | null
+          error_message: string | null
+          id: string
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+          youtube_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration?: number | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+          youtube_url: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: number | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

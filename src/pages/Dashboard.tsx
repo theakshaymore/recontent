@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -14,12 +15,18 @@ import {
   Sparkles,
   Sun,
   Moon,
-  Loader2
+  Loader2,
+  CreditCard
 } from 'lucide-react';
 import { useAuthQuery } from '@/hooks/useAuthQuery';
 import { useTheme } from '@/hooks/useTheme';
 import { useUIStore } from '@/stores/uiStore';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
+import { useVideos, useDeleteVideo } from '@/hooks/useVideos';
+import ProcessVideoForm from '@/components/dashboard/ProcessVideoForm';
+import VideoCard from '@/components/dashboard/VideoCard';
+import { PLAN_DETAILS } from '@/types';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,7 +34,11 @@ const Dashboard = () => {
   const { theme, toggleTheme } = useTheme();
   const { isSidebarOpen, toggleSidebar } = useUIStore();
   const { toast } = useToast();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: videos = [], isLoading: videosLoading } = useVideos();
+  const deleteVideo = useDeleteVideo();
   const [activeTab, setActiveTab] = useState('overview');
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -46,19 +57,44 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    setDeletingVideoId(videoId);
+    try {
+      await deleteVideo.mutateAsync(videoId);
+      toast({
+        title: "Video deleted",
+        description: "The video has been removed from your library.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to delete",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingVideoId(null);
+    }
+  };
+
   const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'content', label: 'My Content', icon: FileText },
+    { id: 'content', label: 'My Videos', icon: Video },
     { id: 'create', label: 'Create New', icon: Sparkles },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
+  const completedVideos = videos.filter(v => v.status === 'completed');
+  const totalContentPieces = completedVideos.length * 4; // Blog, Tweets, Carousel, Instagram
+
   const stats = [
-    { label: 'Videos Processed', value: '0', icon: Video },
-    { label: 'Content Pieces', value: '0', icon: FileText },
-    { label: 'Total Views', value: '0', icon: BarChart3 },
+    { label: 'Videos Processed', value: videos.length.toString(), icon: Video },
+    { label: 'Content Pieces', value: totalContentPieces.toString(), icon: FileText },
+    { label: 'Credits Remaining', value: profile?.credits_remaining?.toString() || '0', icon: CreditCard },
   ];
+
+  const currentPlan = profile?.subscription_tier || 'free';
+  const planDetails = PLAN_DETAILS[currentPlan];
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -74,6 +110,19 @@ const Dashboard = () => {
             <Link to="/" className="flex items-center gap-2">
               <span className="text-xl font-bold gradient-text">ReContentAI</span>
             </Link>
+          </div>
+
+          {/* Plan badge */}
+          <div className="px-6 py-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Plan</span>
+              <Badge variant={currentPlan === 'pro' ? 'default' : 'secondary'} className="capitalize">
+                {currentPlan}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {profile?.credits_remaining ?? 0} credits left
+            </p>
           </div>
 
           {/* Navigation */}
@@ -176,90 +225,152 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              {/* Welcome card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Welcome to ReContentAI!</CardTitle>
-                  <CardDescription>
-                    Start repurposing your content with AI. Upload a video or paste a YouTube URL to get started.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="gradient" onClick={() => setActiveTab('create')}>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Create Your First Content
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* Quick actions */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <ProcessVideoForm onSuccess={() => setActiveTab('content')} />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-primary" />
+                      Your Plan
+                    </CardTitle>
+                    <CardDescription>
+                      {planDetails?.name} - ₹{planDetails?.price}/month
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-2">
+                      {planDetails?.features.slice(0, 3).map((feature) => (
+                        <li key={feature} className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    {currentPlan === 'free' && (
+                      <Button variant="outline" className="w-full">
+                        Upgrade to Pro
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-              {/* Recent activity placeholder */}
+              {/* Recent videos */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
+                  <CardTitle>Recent Videos</CardTitle>
                   <CardDescription>Your latest content transformations</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <p className="text-muted-foreground">No activity yet</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your content history will appear here
-                    </p>
-                  </div>
+                  {videosLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : videos.length > 0 ? (
+                    <div className="space-y-4">
+                      {videos.slice(0, 3).map((video) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video}
+                          onDelete={handleDeleteVideo}
+                          isDeleting={deletingVideoId === video.id}
+                        />
+                      ))}
+                      {videos.length > 3 && (
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => setActiveTab('content')}
+                        >
+                          View All Videos
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground">No videos yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Start by processing your first video
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           )}
 
           {activeTab === 'content' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>My Content</CardTitle>
-                <CardDescription>Manage your repurposed content</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">No content yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Start creating content to see it here
-                  </p>
-                  <Button variant="gradient" onClick={() => setActiveTab('create')}>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Create Content
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <ProcessVideoForm />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Videos</CardTitle>
+                  <CardDescription>Manage your processed videos and content</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {videosLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : videos.length > 0 ? (
+                    <div className="space-y-4">
+                      {videos.map((video) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video}
+                          onDelete={handleDeleteVideo}
+                          isDeleting={deletingVideoId === video.id}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Video className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground">No videos yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Process a YouTube video to see it here
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeTab === 'create' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New Content</CardTitle>
-                <CardDescription>Transform your videos into multiple content formats</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
-                  <Video className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-lg font-medium mb-2">Upload a video or paste a YouTube URL</p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    We'll extract the content and generate multiple formats for you
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button variant="outline" disabled>
-                      Upload Video
-                    </Button>
-                    <Button variant="gradient" disabled>
-                      Paste YouTube URL
-                    </Button>
+            <div className="max-w-2xl mx-auto">
+              <ProcessVideoForm onSuccess={() => setActiveTab('content')} />
+              
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>How It Works</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { step: 1, title: 'Paste YouTube URL', desc: 'Enter any YouTube video link' },
+                      { step: 2, title: 'AI Processing', desc: 'Our AI transcribes and analyzes your video' },
+                      { step: 3, title: 'Get Content', desc: 'Receive blog posts, tweets, carousels & thumbnails' },
+                      { step: 4, title: 'Download & Share', desc: 'Use your content across all platforms' },
+                    ].map((item) => (
+                      <div key={item.step} className="flex items-start gap-4">
+                        <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-semibold text-sm flex-shrink-0">
+                          {item.step}
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Coming soon - Backend integration in progress
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeTab === 'analytics' && (
@@ -271,9 +382,9 @@ const Dashboard = () => {
               <CardContent>
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <BarChart3 className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">No analytics data yet</p>
+                  <p className="text-muted-foreground">Analytics coming soon</p>
                   <p className="text-sm text-muted-foreground">
-                    Analytics will appear once you start creating content
+                    We're working on bringing you detailed insights about your content
                   </p>
                 </div>
               </CardContent>
@@ -293,9 +404,42 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">{user?.email}</p>
                   </div>
                   <div>
+                    <label className="text-sm font-medium">Full Name</label>
+                    <p className="text-muted-foreground">{profile?.full_name || 'Not set'}</p>
+                  </div>
+                  <div>
                     <label className="text-sm font-medium">Account ID</label>
                     <p className="text-xs text-muted-foreground font-mono">{user?.id}</p>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subscription</CardTitle>
+                  <CardDescription>Manage your subscription plan</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{planDetails?.name} Plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        ₹{planDetails?.price}/month
+                      </p>
+                    </div>
+                    <Badge variant={currentPlan === 'pro' ? 'default' : 'secondary'} className="capitalize">
+                      {currentPlan}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Credits Remaining</p>
+                    <p className="text-2xl font-bold">{profile?.credits_remaining ?? 0}</p>
+                  </div>
+                  {currentPlan === 'free' && (
+                    <Button variant="gradient" className="w-full">
+                      Upgrade to Pro - ₹999/month
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
