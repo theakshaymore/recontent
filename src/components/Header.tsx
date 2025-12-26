@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogOut, Loader2 } from 'lucide-react';
+import { Menu, X, LogOut, Loader2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
@@ -11,6 +12,7 @@ const Header = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,7 +54,7 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <span className="text-2xl font-bold gradient-text">ContentAI</span>
+          <span className="text-2xl font-bold gradient-text">ReContentAI</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -68,6 +70,19 @@ const Header = () => {
             className="text-foreground/70 hover:text-foreground transition-colors font-medium"
           >
             Pricing
+          </button>
+          
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? (
+              <Moon className="h-5 w-5 text-foreground/70" />
+            ) : (
+              <Sun className="h-5 w-5 text-foreground/70" />
+            )}
           </button>
           
           {loading ? (
@@ -138,6 +153,24 @@ const Header = () => {
               className="text-foreground/70 hover:text-foreground transition-colors font-medium text-left py-2"
             >
               Pricing
+            </button>
+            
+            {/* Mobile Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors font-medium text-left py-2"
+            >
+              {theme === 'light' ? (
+                <>
+                  <Moon className="h-5 w-5" />
+                  Dark Mode
+                </>
+              ) : (
+                <>
+                  <Sun className="h-5 w-5" />
+                  Light Mode
+                </>
+              )}
             </button>
             
             {loading ? (

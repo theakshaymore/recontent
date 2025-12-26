@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="space-y-4">
-            <span className="text-2xl font-bold gradient-text">ContentAI</span>
+            <span className="text-2xl font-bold gradient-text">ReContentAI</span>
             <p className="text-background/70 text-sm leading-relaxed">
               Transform your YouTube videos into 10+ content formats with AI. 
               Save hours of content creation time.
@@ -102,7 +102,7 @@ const Footer = () => {
 
         <div className="border-t border-background/10 mt-12 pt-8 text-center">
           <p className="text-background/50 text-sm">
-            © {new Date().getFullYear()} ContentAI. All rights reserved. Made with ❤️ in India.
+            © {new Date().getFullYear()} ReContentAI. All rights reserved. Made with ❤️ in India.
           </p>
         </div>
       </div>
