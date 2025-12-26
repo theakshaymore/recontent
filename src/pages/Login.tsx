@@ -119,7 +119,7 @@ const Login = () => {
         <Card className="border-0 shadow-xl animate-scale-in">
           <CardHeader className="text-center pb-4">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold gradient-text">ContentAI</span>
+              <span className="text-3xl font-bold gradient-text">ReContentAI</span>
             </Link>
             <CardTitle className="text-2xl">Welcome back</CardTitle>
             <CardDescription>Sign in to your account</CardDescription>

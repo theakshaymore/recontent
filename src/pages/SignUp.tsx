@@ -90,7 +90,7 @@ const SignUp = () => {
 
     toast({
       title: "Account created!",
-      description: "Welcome to ContentAI. You can now start repurposing content.",
+      description: "Welcome to ReContentAI. You can now start repurposing content.",
     });
     navigate('/');
   };
@@ -138,7 +138,7 @@ const SignUp = () => {
         <Card className="border-0 shadow-xl animate-scale-in">
           <CardHeader className="text-center pb-4">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold gradient-text">ContentAI</span>
+              <span className="text-3xl font-bold gradient-text">ReContentAI</span>
             </Link>
             <CardTitle className="text-2xl">Create your account</CardTitle>
             <CardDescription>Start your free trial today</CardDescription>

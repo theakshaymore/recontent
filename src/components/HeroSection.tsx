@@ -78,7 +78,7 @@ const HeroSection = () => {
                 ))}
               </div>
               <div className="text-sm text-muted-foreground">
-                <span className="text-foreground font-semibold">2,000+</span> creators already using ContentAI
+                <span className="text-foreground font-semibold">2,000+</span> creators already using ReContentAI
               </div>
             </div>
           </div>
